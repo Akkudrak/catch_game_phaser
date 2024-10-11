@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+</head>
+<body style="max-width: 720px;padding: 0;margin: 0;">
+<div  class="" id="phaser-example"></div>
+
+
+<script>
+    //globals
+    var basket=undefined;
+    var ticks=0;
+    var index_data=0;
+    var startingX=[120,290,460,630,800,970];//example for width=1080px
+    var startingX=[67,200,333,466,600,734];//columns for width=800px
+    var fruit_textures=["lemon","orange","strawberry","pear"];
+    var fruits=[];
+    var catched=[];
+
+    var w_screen=800;
+    var h_screen=1000;
+
+    class fallinFruits extends Phaser.Scene
+    {
+        
+         preload() {
+            this.load.image('background', 'images/bg/4.jpg');
+            //fruits
+            this.load.image('lemon', 'images/fruits/lemon.png');
+            this.load.image('orange', 'images/fruits/orange.png');
+            this.load.image('strawberry', 'images/fruits/strawberry.png');
+            this.load.image('pear', 'images/fruits/pear.png');
+
+            this.load.image('basket', 'images/basket.png');
+
+
+        }
+
+
+        create() {
+            this.add.image(0,0,"background").setOrigin(0,0);//create bg
+            
+            
+            basket=this.physics.add.sprite(w_screen/2, h_screen-100, "basket").setOrigin(.5,.5).setScale(.8,.8).setInteractive().setImmovable(true).setInteractive({ useHandCursor: true });//create catcher
+            this.input.setDraggable(basket);
+
+            basket.on('drag', function(pointer){
+                basket.x=pointer.x;
+            });
+        }
+
+        
+        update() {
+            this.physics.add.collider(basket,fruits, function (basket,fruta) {
+                //hide and destroy
+                fruta.setVisible(false);
+                fruta.setActive(false);
+                fruta.destroy();
+
+                pushCatched(fruta.texture.key);//push to score array
+
+                _delete(fruta.index);//delete from global sprite's array
+            });
+
+            ticks++;//cycle counter
+
+            if (ticks==20) {//spawn fruit every 20 cycles
+                this.addfruit();
+                ticks=0;//reset
+            }
+
+
+            for (var i = fruits.length - 1; i >= 0; i--) {//on world bounds destroy
+                if (fruits[i].y>h_screen) {
+                    //hide and destroy again
+                    fruits[i].setVisible(false);
+                    fruits[i].setActive(false);
+                    fruits[i].destroy();
+
+                    _delete(fruits[i].index); //delete from global sprite's array again
+                }
+            }
+
+
+        }
+
+         
+
+        addfruit(){
+            var fruta=this.physics.add.sprite(startingX[Math.floor(Math.random() * startingX.length)], -10, fruit_textures[Math.floor(Math.random() * fruit_textures.length)]).setOrigin(.5,.5).setScale(.4,.4).setInteractive().setVelocity(0,500);
+            fruta.index=index_data;//generate an uuid for every sprite for identification
+            index_data++;
+            fruits.push(fruta);
+        }
+
+
+    }
+
+    function pushCatched(type){//score array, on console execute catched array to see score
+       if (catched[type]==undefined) {
+        catched[type]=1;
+       }else{
+        catched[type]+=1;
+       }
+    }
+
+    function _delete(index){
+        for (var i = 0; i < fruits.length; i++) {//search item and delete from array
+            if (index==fruits[i].index) {
+                fruits.splice(i,1);
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+    const config = {
+        type: Phaser.AUTO,
+        width: w_screen,
+        height: h_screen,
+        backgroundColor: '#2d2d2d',
+        parent: 'phaser-example',
+        scene: fallinFruits,
+        physics: {
+            default: 'arcade',
+            arcade: {
+                debug: false,
+                //gravity: { y: 100 }
+            }
+        },
+        fx: {
+            glow: {
+                distance: 32,
+                quality: 0.1
+            }
+        }
+    };
+
+    var game = new Phaser.Game(config);
+    
+
+
+</script>
+
+</body>
+</html>
